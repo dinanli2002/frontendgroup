@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
@@ -28,7 +30,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-
 
 
 class MainActivity : ComponentActivity() {
@@ -203,25 +204,23 @@ fun NurseInfoScreen(onNavigateBack: () -> Unit) {
 }
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchNurseScreen(onNavigateToNurseInfo: () -> Unit, onNavigateBack: () -> Unit) {
     var text1 by remember { mutableStateOf("") }
-    var text2 by remember { mutableStateOf("") }
     var snackbarHostState = remember { SnackbarHostState() }
     var snackbarMessage by remember { mutableStateOf("") }
+    var results by remember { mutableStateOf(listOf<Nurse>()) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Search Nurse") },
+                title = { Text("Nurse Search Screen") },  // Corregido el título
                 navigationIcon = {
                     Button(onClick = onNavigateBack) { Text("Back") }
                 }
             )
         },
-        snackbarHost = {
-            SnackbarHost(hostState = snackbarHostState)
-        }
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -237,37 +236,37 @@ fun SearchNurseScreen(onNavigateToNurseInfo: () -> Unit, onNavigateBack: () -> U
                 modifier = Modifier.fillMaxWidth()
             )
 
-            TextField(
-                value = text2,
-                onValueChange = { text2 = it },
-                label = { Text("Password") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
             Button(
                 onClick = {
-                    // Verificar las credenciales
-                    if (text1 == "nurse1" && text2 == "nurse1") {
-                        snackbarMessage = "Login successful"
-                        //onNavigateToNurseInfo() // Cambiar a la pantalla nurseInfo
-                    } else {
-                        snackbarMessage = "Login incorrect"
-                    }
+
+                        snackbarMessage = "Search Successful"
+                    results = searchNursesByName(text1)
+
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Validate Login")
+                Text("Search")
             }
 
-            LaunchedEffect(snackbarMessage) {
-                if (snackbarMessage.isNotEmpty()) {
-                    snackbarHostState.showSnackbar(snackbarMessage)
+            LazyColumn(modifier = Modifier.fillMaxSize().padding(top = 16.dp)) {
+                items(results) { nurse ->
+                    NurseItem(nurse = nurse)
                 }
             }
+
         }
+
     }
 
+
 }
+
+fun searchNursesByName(query: String): List<Nurse> {
+    return nurses.filter { it.name.contains(query, ignoreCase = true) }.take(3)
+}
+
+
+
 @Preview(showBackground = true)
 @Composable
 fun DefaultPreview() {
