@@ -7,7 +7,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -58,18 +57,32 @@ fun MyApp() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(onNavigateToForm: () -> Unit) {
+    var showList by remember { mutableStateOf(false) }
     Scaffold(
         topBar = {
             TopAppBar(title = { Text("Main Screen") })
         }
     ) { paddingValues ->
-        Box(
+        Column (
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues),
-            contentAlignment = androidx.compose.ui.Alignment.Center
+                .padding(paddingValues).
+                padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Button(onClick = onNavigateToForm) {
+            Button(
+                onClick = { showList = !showList },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(if (showList) "Hide List" else "Show List")
+            }
+            if (showList) {
+                NurseList(onBackPressed = { showList = false })
+            }
+            Button(
+                onClick = onNavigateToForm,
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Text("Login")
             }
         }
@@ -123,7 +136,7 @@ fun FormScreen(onNavigateToNurseInfo: () -> Unit, onNavigateBack: () -> Unit) {
                     // Verificar las credenciales
                     if (text1 == "nurse1" && text2 == "nurse1") {
                         snackbarMessage = "Login successful"
-                        onNavigateToNurseInfo() // Cambiar a la pantalla nurseInfo
+                        //onNavigateToNurseInfo() // Cambiar a la pantalla nurseInfo
                     } else {
                         snackbarMessage = "Login incorrect"
                     }
