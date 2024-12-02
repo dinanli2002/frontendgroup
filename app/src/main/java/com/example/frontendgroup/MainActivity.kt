@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.example.frontendgroup
 
 import android.os.Bundle
@@ -28,6 +30,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
+
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,10 +44,14 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun MyApp() {
-    var currentScreen by remember { mutableStateOf("main") } // State for current screen
+    var currentScreen by remember { mutableStateOf("main") } // Estado de la pantalla actual
     when (currentScreen) {
         "main" -> MainScreen(onNavigateToForm = { currentScreen = "form" })
-        "form" -> FormScreen(onNavigateBack = { currentScreen = "main" })
+        "form" -> FormScreen(
+            onNavigateToNurseInfo = { currentScreen = "nurseInfo" },  // Cambiar la pantalla a nurseInfo
+            onNavigateBack = { currentScreen = "main" }
+        )
+        "nurseInfo" -> NurseInfoScreen(onNavigateBack = { currentScreen = "main" })
     }
 }
 
@@ -70,11 +78,12 @@ fun MainScreen(onNavigateToForm: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FormScreen(onNavigateBack: () -> Unit) {
+fun FormScreen(onNavigateToNurseInfo: () -> Unit, onNavigateBack: () -> Unit) {
     var text1 by remember { mutableStateOf("") }
     var text2 by remember { mutableStateOf("") }
     var snackbarHostState = remember { SnackbarHostState() }
     var snackbarMessage by remember { mutableStateOf("") }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -95,7 +104,6 @@ fun FormScreen(onNavigateBack: () -> Unit) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-
             TextField(
                 value = text1,
                 onValueChange = { text1 = it },
@@ -112,15 +120,17 @@ fun FormScreen(onNavigateBack: () -> Unit) {
 
             Button(
                 onClick = {
-                    snackbarMessage = if (text1 == "nurse1" && text2 == "nurse1") {
-                        "Login successful"
+                    // Verificar las credenciales
+                    if (text1 == "nurse1" && text2 == "nurse1") {
+                        snackbarMessage = "Login successful"
+                        onNavigateToNurseInfo() // Cambiar a la pantalla nurseInfo
                     } else {
-                        "Login incorrect"
+                        snackbarMessage = "Login incorrect"
                     }
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Login")
+                Text("Validate Login")
             }
 
             LaunchedEffect(snackbarMessage) {
@@ -132,6 +142,38 @@ fun FormScreen(onNavigateBack: () -> Unit) {
     }
 }
 
+
+@Composable
+fun NurseInfoScreen(onNavigateBack: () -> Unit) {
+    var showNurseList by remember { mutableStateOf(false) }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Nurse Info Screen") },  // Corregido el título
+                navigationIcon = {
+                    Button(onClick = onNavigateBack) { Text("Back") }
+                }
+            )
+        },
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Button(onClick = { showNurseList = true }) {
+                Text("Nurse Info")
+            }
+
+            if (showNurseList) {
+                NurseList(onBackPressed = { showNurseList = false })
+            }
+        }
+    }
+}
 @Preview(showBackground = true)
 @Composable
 fun DefaultPreview() {
