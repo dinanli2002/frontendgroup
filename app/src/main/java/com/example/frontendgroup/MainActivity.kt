@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
@@ -30,7 +32,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
 
-
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,18 +46,23 @@ class MainActivity : ComponentActivity() {
 fun MyApp() {
     var currentScreen by remember { mutableStateOf("main") } // Estado de la pantalla actual
     when (currentScreen) {
-        "main" -> MainScreen(onNavigateToForm = { currentScreen = "form" })
+        "main" -> MainScreen(onNavigateToForm = { currentScreen = "form" }, onNavigateToSearch = {currentScreen = "searchNurse"})
+
         "form" -> FormScreen(
             onNavigateToNurseInfo = { currentScreen = "nurseInfo" },  // Cambiar la pantalla a nurseInfo
             onNavigateBack = { currentScreen = "main" }
         )
         "nurseInfo" -> NurseInfoScreen(onNavigateBack = { currentScreen = "main" })
+        "searchNurse" -> SearchNurseScreen(
+            onNavigateToNurseInfo = { currentScreen = "nurseInfo" },  // Cambiar la pantalla a nurseInfo
+            onNavigateBack = { currentScreen = "main" }
+        )
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(onNavigateToForm: () -> Unit) {
+fun MainScreen(onNavigateToForm: () -> Unit,onNavigateToSearch: () -> Unit) {
     var showList by remember { mutableStateOf(false) }
     Scaffold(
         topBar = {
@@ -85,9 +91,17 @@ fun MainScreen(onNavigateToForm: () -> Unit) {
             ) {
                 Text("Login")
             }
+            Button(
+                onClick = onNavigateToSearch,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Search")
+            }
         }
     }
 }
+
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -156,6 +170,7 @@ fun FormScreen(onNavigateToNurseInfo: () -> Unit, onNavigateBack: () -> Unit) {
 }
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NurseInfoScreen(onNavigateBack: () -> Unit) {
     var showNurseList by remember { mutableStateOf(false) }
@@ -187,8 +202,74 @@ fun NurseInfoScreen(onNavigateBack: () -> Unit) {
         }
     }
 }
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SearchNurseScreen(onNavigateToNurseInfo: () -> Unit, onNavigateBack: () -> Unit) {
+    var text1 by remember { mutableStateOf("") }
+    var snackbarHostState = remember { SnackbarHostState() }
+    var snackbarMessage by remember { mutableStateOf("") }
+    var results by remember { mutableStateOf(listOf<Nurse>()) }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Nurse Search Screen") },  // Corregido el título
+                navigationIcon = {
+                    Button(onClick = onNavigateBack) { Text("Back") }
+                }
+            )
+        },
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            TextField(
+                value = text1,
+                onValueChange = { text1 = it },
+                label = { Text("Username") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Button(
+                onClick = {
+
+                        snackbarMessage = "Search Successful"
+                    results = searchNursesByName(text1)
+
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Search")
+            }
+
+            LazyColumn(modifier = Modifier.fillMaxSize().padding(top = 16.dp)) {
+                items(results) { nurse ->
+                    NurseItem(nurse = nurse)
+                }
+            }
+
+        }
+
+    }
+
+
+}
+
+fun searchNursesByName(query: String): List<Nurse> {
+    return nurses.filter { it.name.contains(query, ignoreCase = true) }.take(3)
+}
+
+
+
 @Preview(showBackground = true)
 @Composable
 fun DefaultPreview() {
     MyApp()
 }
+
