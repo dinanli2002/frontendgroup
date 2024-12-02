@@ -45,18 +45,23 @@ class MainActivity : ComponentActivity() {
 fun MyApp() {
     var currentScreen by remember { mutableStateOf("main") } // Estado de la pantalla actual
     when (currentScreen) {
-        "main" -> MainScreen(onNavigateToForm = { currentScreen = "form" })
+        "main" -> MainScreen(onNavigateToForm = { currentScreen = "form" }, onNavigateToSearch = {currentScreen = "searchNurse"})
+
         "form" -> FormScreen(
             onNavigateToNurseInfo = { currentScreen = "nurseInfo" },  // Cambiar la pantalla a nurseInfo
             onNavigateBack = { currentScreen = "main" }
         )
         "nurseInfo" -> NurseInfoScreen(onNavigateBack = { currentScreen = "main" })
+        "searchNurse" -> SearchNurseScreen(
+            onNavigateToNurseInfo = { currentScreen = "nurseInfo" },  // Cambiar la pantalla a nurseInfo
+            onNavigateBack = { currentScreen = "main" }
+        )
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(onNavigateToForm: () -> Unit) {
+fun MainScreen(onNavigateToForm: () -> Unit,onNavigateToSearch: () -> Unit) {
     var showList by remember { mutableStateOf(false) }
     Scaffold(
         topBar = {
@@ -85,9 +90,17 @@ fun MainScreen(onNavigateToForm: () -> Unit) {
             ) {
                 Text("Login")
             }
+            Button(
+                onClick = onNavigateToSearch,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Search")
+            }
         }
     }
 }
+
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -156,6 +169,7 @@ fun FormScreen(onNavigateToNurseInfo: () -> Unit, onNavigateBack: () -> Unit) {
 }
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NurseInfoScreen(onNavigateBack: () -> Unit) {
     var showNurseList by remember { mutableStateOf(false) }
@@ -187,8 +201,76 @@ fun NurseInfoScreen(onNavigateBack: () -> Unit) {
         }
     }
 }
+
+
+@Composable
+fun SearchNurseScreen(onNavigateToNurseInfo: () -> Unit, onNavigateBack: () -> Unit) {
+    var text1 by remember { mutableStateOf("") }
+    var text2 by remember { mutableStateOf("") }
+    var snackbarHostState = remember { SnackbarHostState() }
+    var snackbarMessage by remember { mutableStateOf("") }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Search Nurse") },
+                navigationIcon = {
+                    Button(onClick = onNavigateBack) { Text("Back") }
+                }
+            )
+        },
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState)
+        }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            TextField(
+                value = text1,
+                onValueChange = { text1 = it },
+                label = { Text("Username") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            TextField(
+                value = text2,
+                onValueChange = { text2 = it },
+                label = { Text("Password") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Button(
+                onClick = {
+                    // Verificar las credenciales
+                    if (text1 == "nurse1" && text2 == "nurse1") {
+                        snackbarMessage = "Login successful"
+                        //onNavigateToNurseInfo() // Cambiar a la pantalla nurseInfo
+                    } else {
+                        snackbarMessage = "Login incorrect"
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Validate Login")
+            }
+
+            LaunchedEffect(snackbarMessage) {
+                if (snackbarMessage.isNotEmpty()) {
+                    snackbarHostState.showSnackbar(snackbarMessage)
+                }
+            }
+        }
+    }
+
+}
 @Preview(showBackground = true)
 @Composable
 fun DefaultPreview() {
     MyApp()
 }
+
