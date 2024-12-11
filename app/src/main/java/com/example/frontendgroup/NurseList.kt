@@ -43,8 +43,6 @@ fun NurseList(onBackPressed: () -> Unit) {
         ) {
             Text("Back", style = MaterialTheme.typography.bodyLarge)
         }
-
-
         LazyColumn(modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)) {
@@ -58,7 +56,6 @@ fun NurseList(onBackPressed: () -> Unit) {
 @Composable
 fun NurseItem(nurse: Nurse) {
     Column(modifier = Modifier.padding(8.dp)) {
-
         Text(
             text = "Name: ${nurse.name}",
             style = MaterialTheme.typography.bodyLarge,
