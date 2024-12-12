@@ -33,6 +33,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.example.frontendgroup.stricturedata.Login
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -52,7 +56,30 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun MyApp() {
-    val viewModel:FormViewModel= viewModel()
+    val navController = rememberNavController()
+    NavHost(navController = navController, startDestination = "main") {
+        composable("main") {
+            MainScreen(navController= navController)
+        }
+        composable("form") {
+            val viewModel: FormViewModel = viewModel()
+            FormScreen(
+                viewModel = viewModel,
+                onNavigateToNurseInfo = { navController.navigate("nurseInfo") },
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        composable("nurseInfo") {
+            NurseInfoScreen(onNavigateBack = { navController.popBackStack() })
+        }
+        composable("searchNurse") {
+            SearchNurseScreen(
+                onNavigateToNurseInfo = { navController.navigate("nurseInfo") },
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+    }
+    /*val viewModel:FormViewModel= viewModel()
     when (viewModel.uiState.collectAsState().value.currentScreen) {
         "main" -> MainScreen(viewModel)
         "form" -> FormScreen(
@@ -65,16 +92,16 @@ fun MyApp() {
             onNavigateToNurseInfo = { viewModel.updateCurretScreen("nurseInfo")},  // Cambiar la pantalla a nurseInfo
             onNavigateBack = { viewModel.updateCurretScreen("main")}
         )
-    }
+    }*/
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(viewModel: FormViewModel) {
+fun MainScreen(navController: NavController) {
     var showList by remember { mutableStateOf(false) }
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("Main Screen") })
+            TopAppBar(title = { Text("Hospital") })
         }
     ) { paddingValues ->
         Column (
@@ -94,13 +121,13 @@ fun MainScreen(viewModel: FormViewModel) {
                 NurseList(onBackPressed = { showList = false })
             }
             Button(
-                onClick =  { viewModel.updateCurretScreen("form")},
+                onClick =  { navController.navigate("form") },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Login")
             }
             Button(
-                onClick = {viewModel.updateCurretScreen("searchNurse")},
+                onClick = {navController.navigate("searchNurse")},
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Search")
