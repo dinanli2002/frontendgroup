@@ -19,6 +19,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -57,42 +58,18 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MyApp() {
     val navController = rememberNavController()
-    NavHost(navController = navController, startDestination = "main") {
-        composable("main") {
-            MainScreen(navController= navController)
-        }
+    NavHost(navController = navController, startDestination = "form") {
         composable("form") {
             val viewModel: FormViewModel = viewModel()
             FormScreen(
                 viewModel = viewModel,
-                onNavigateToNurseInfo = { navController.navigate("nurseInfo") },
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateToNurseInfo = { navController.navigate("nurseList") }
             )
         }
-        composable("nurseInfo") {
-            NurseInfoScreen(onNavigateBack = { navController.popBackStack() })
-        }
-        composable("searchNurse") {
-            SearchNurseScreen(
-                onNavigateToNurseInfo = { navController.navigate("nurseInfo") },
-                onNavigateBack = { navController.popBackStack() }
-            )
+        composable("nurseList") {
+            MainScreen(navController = navController)
         }
     }
-    /*val viewModel:FormViewModel= viewModel()
-    when (viewModel.uiState.collectAsState().value.currentScreen) {
-        "main" -> MainScreen(viewModel)
-        "form" -> FormScreen(
-            viewModel = viewModel,
-            onNavigateToNurseInfo = { viewModel.updateCurretScreen("nurseInfo")},  // Cambiar la pantalla a nurseInfo
-            onNavigateBack = { viewModel.updateCurretScreen("main") }
-        )
-        "nurseInfo" -> NurseInfoScreen(onNavigateBack = { viewModel.updateCurretScreen("main") })
-        "searchNurse" -> SearchNurseScreen(
-            onNavigateToNurseInfo = { viewModel.updateCurretScreen("nurseInfo")},  // Cambiar la pantalla a nurseInfo
-            onNavigateBack = { viewModel.updateCurretScreen("main")}
-        )
-    }*/
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -101,7 +78,7 @@ fun MainScreen(navController: NavController) {
     var showList by remember { mutableStateOf(false) }
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("Hospital") })
+            TopAppBar(title = { Text("Nurse List") })
         }
     ) { paddingValues ->
         Column (
@@ -111,27 +88,7 @@ fun MainScreen(navController: NavController) {
                 padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Button(
-                onClick = { showList = !showList },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(if (showList) "Hide List" else "Show List")
-            }
-            if (showList) {
-                NurseList(onBackPressed = { showList = false })
-            }
-            Button(
-                onClick =  { navController.navigate("form") },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Login")
-            }
-            Button(
-                onClick = {navController.navigate("searchNurse")},
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Search")
-            }
+            NurseList(onBackPressed = { navController.popBackStack() })
         }
     }
 }
@@ -140,15 +97,13 @@ fun MainScreen(navController: NavController) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FormScreen(viewModel: FormViewModel, onNavigateToNurseInfo: () -> Unit, onNavigateBack: () -> Unit) {
+fun FormScreen(viewModel: FormViewModel, onNavigateToNurseInfo: () -> Unit) {
     val uiState = viewModel.uiState.collectAsState()
+    var showRegistrationForm by remember { mutableStateOf(false) }
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Login") },
-                navigationIcon = {
-                    Button(onClick = onNavigateBack) { Text("Back") }
-                }
+                title = { Text(if (showRegistrationForm) "Register" else "Login") }
             )
         },
         snackbarHost = {
@@ -162,27 +117,62 @@ fun FormScreen(viewModel: FormViewModel, onNavigateToNurseInfo: () -> Unit, onNa
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            TextField(
-                value = uiState.value.username,
-                onValueChange = viewModel::onUsernameChange,
-                label = { Text("Username") },
-                modifier = Modifier.fillMaxWidth()
-            )
-            TextField(
-                value = uiState.value.password,
-                onValueChange = viewModel::onPasswordChange,
-                label = { Text("Password") },
-                modifier = Modifier.fillMaxWidth()
-            )
-            Button(
-                onClick = {
-                    viewModel.validateLogin(
-                        onSuccess = onNavigateToNurseInfo
-                    )
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Validate Login")
+            if (showRegistrationForm) {
+                // Registration Form
+                TextField(
+                    value = uiState.value.username,
+                    onValueChange = viewModel::onUsernameChange,
+                    label = { Text("Username") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                TextField(
+                    value = uiState.value.password,
+                    onValueChange = viewModel::onPasswordChange,
+                    label = { Text("Password") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Button(
+                    onClick = onNavigateToNurseInfo,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Go to Nurse List")
+                }
+                TextButton(
+                    onClick = { showRegistrationForm = false },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Back to Login")
+                }
+            } else {
+                // Login Form
+                TextField(
+                    value = uiState.value.username,
+                    onValueChange = viewModel::onUsernameChange,
+                    label = { Text("Username") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                TextField(
+                    value = uiState.value.password,
+                    onValueChange = viewModel::onPasswordChange,
+                    label = { Text("Password") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Button(
+                    onClick = {
+                        viewModel.validateLogin(
+                            onSuccess = onNavigateToNurseInfo
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Login")
+                }
+                TextButton(
+                    onClick = { showRegistrationForm = true },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Registry")
+                }
             }
         }
     }
@@ -308,4 +298,3 @@ fun searchNursesByName(query: String): List<Nurse> {
 fun DefaultPreview() {
     MyApp()
 }
-
