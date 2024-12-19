@@ -17,8 +17,7 @@ data class Nurse(
     var name: String,
     var user: String,
     var password: String,
-    var photoResId: Int,
-    //modify the data class to accept url photo
+    var nursePicture: Int,
    // var photoNurseUrl: String,
 )
 
@@ -68,17 +67,16 @@ fun NurseItem(nurse: Nurse) {
             .fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Imagen de perfil
+        // Image
         Image(
-            painter = painterResource(id = nurse.photoResId),
+            painter = painterResource(id = nurse. nursePicture),
             contentDescription = "Profile picture of ${nurse.name}",
             modifier = Modifier
                 .size(64.dp)
                 .padding(4.dp),
-            contentScale = ContentScale.Crop // Ajustar imagen al contenedor
+            contentScale = ContentScale.Crop
         )
 
-        // Información de la enfermera
         Column(modifier = Modifier.padding(8.dp)) {
             Text(
                 text = "Name: ${nurse.name}",
