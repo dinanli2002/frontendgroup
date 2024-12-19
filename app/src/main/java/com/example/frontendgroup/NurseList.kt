@@ -19,9 +19,10 @@ data class Nurse(
     var password: String,
     var nursePicture: Int,
    // var photoNurseUrl: String,
+
 )
 
-// Lista de enfermeras
+// Lista de enfermeras with pictures
 val nurses = listOf(
     Nurse("nurse1", "nurse1", "nurse1",R.drawable.imagen2),
     Nurse("Dayanna", "dayannadw", "dayanna1",R.drawable.imagen),
