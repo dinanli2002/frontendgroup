@@ -11,8 +11,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+//import androidx.compose.foundation.lazy.LazyColumn
+//import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
@@ -75,7 +75,6 @@ fun MyApp() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(navController: NavController) {
-    var showList by remember { mutableStateOf(false) }
     Scaffold(
         topBar = {
             TopAppBar(title = { Text("Nurse List") })
@@ -188,12 +187,6 @@ class FormViewModel : ViewModel() {
     fun onPasswordChange(newPassword: String) {
         _uiState.update { it.copy(password = newPassword) }
     }
-    fun updateCurretScreen(currentScreen: String){
-        _uiState.update { (it.copy( currentScreen=currentScreen )) }
-    }
-    fun getCurrentScreen():String{
-        return _uiState.value.currentScreen
-    }
     fun validateLogin(onSuccess: () -> Unit) {
         viewModelScope.launch {
             if (_uiState.value.username == "nurse1" && _uiState.value.password == "nurse1") {
@@ -207,39 +200,7 @@ class FormViewModel : ViewModel() {
 }
 
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun NurseInfoScreen(onNavigateBack: () -> Unit) {
-    var showNurseList by remember { mutableStateOf(false) }
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Nurse Info Screen") },  // Corregido el título
-                navigationIcon = {
-                    Button(onClick = onNavigateBack) { Text("Back") }
-                }
-            )
-        },
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Button(onClick = { showNurseList = true }) {
-                Text("Nurse Info")
-            }
-            if (showNurseList) {
-                NurseList(onBackPressed = { showNurseList = false })
-            }
-        }
-    }
-}
-
-
-@OptIn(ExperimentalMaterial3Api::class)
+/*@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchNurseScreen(onNavigateToNurseInfo: () -> Unit, onNavigateBack: () -> Unit) {
     var text1 by remember { mutableStateOf("") }
@@ -289,7 +250,7 @@ fun SearchNurseScreen(onNavigateToNurseInfo: () -> Unit, onNavigateBack: () -> U
 
 fun searchNursesByName(query: String): List<Nurse> {
     return nurses.filter { it.name.contains(query, ignoreCase = true) }.take(3)
-}
+}*/
 
 
 
