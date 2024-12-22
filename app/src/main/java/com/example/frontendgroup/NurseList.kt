@@ -12,15 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-
-data class Nurse(
-    var name: String,
-    var user: String,
-    var password: String,
-    var nursePicture: Int,
-   // var photoNurseUrl: String,
-
-)
+import com.example.frontendgroup.stricturedata.Nurse
 
 // Lista de enfermeras with pictures
 val nurses = listOf(
@@ -47,7 +39,6 @@ fun NurseList(onBackPressed: () -> Unit) {
         ) {
             Text("Back", style = MaterialTheme.typography.bodyLarge)
         }
-
         LazyColumn(modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)) {
@@ -61,14 +52,12 @@ fun NurseList(onBackPressed: () -> Unit) {
 
 @Composable
 fun NurseItem(nurse: Nurse) {
-
     Row(
         modifier = Modifier
             .padding(8.dp)
             .fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Image
         Image(
             painter = painterResource(id = nurse. nursePicture),
             contentDescription = "Profile picture of ${nurse.name}",
@@ -76,9 +65,7 @@ fun NurseItem(nurse: Nurse) {
                 .size(64.dp)
                 .padding(4.dp),
             contentScale = ContentScale.Crop
-          
-  
-
+        )
         Column(modifier = Modifier.padding(8.dp)) {
             Text(
                 text = "Name: ${nurse.name}",
