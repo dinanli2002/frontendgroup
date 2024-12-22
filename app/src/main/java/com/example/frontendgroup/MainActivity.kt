@@ -249,7 +249,7 @@ fun SearchNurseScreen(onNavigateToNurseInfo: () -> Unit, onNavigateBack: () -> U
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Nurse Search Screen") },  // Corregido el título
+                title = { Text("Nurse Search Screen") },
                 navigationIcon = {
                     Button(onClick = onNavigateBack) { Text("Back") }
                 }
