@@ -3,11 +3,13 @@
 package com.example.frontendgroup
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -32,12 +34,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.frontendgroup.retrofit.RemoteNurseUiState
 import com.example.frontendgroup.stricturedata.Login
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -60,14 +64,25 @@ fun MyApp() {
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = "form") {
         composable("form") {
-            val viewModel: FormViewModel = viewModel()
+            val loginViewModel: LoginViewModel = viewModel()
+            val formViewModel: FormViewModel = viewModel(factory = object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    return FormViewModel(loginViewModel) as T
+                }
+            })
             FormScreen(
-                viewModel = viewModel,
-                onNavigateToNurseInfo = { navController.navigate("nurseList") }
+                viewModel = formViewModel,
+                onNavigateToNurseInfo = { navController.navigate("nurseList") },
+                onNavigateToRetrofitExample = { navController.navigate("retrofitExample") }
             )
         }
         composable("nurseList") {
             MainScreen(navController = navController)
+        }
+        composable("retrofitExample") {
+            val remoteViewModel: ProfieViewModel = viewModel()
+            ExempleRetrofit(remoteViewModel = remoteViewModel)
         }
     }
 }
@@ -96,7 +111,7 @@ fun MainScreen(navController: NavController) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FormScreen(viewModel: FormViewModel, onNavigateToNurseInfo: () -> Unit) {
+fun FormScreen(viewModel: FormViewModel, onNavigateToNurseInfo: () -> Unit, onNavigateToRetrofitExample: () -> Unit) {
     val uiState = viewModel.uiState.collectAsState()
     var showRegistrationForm by remember { mutableStateOf(false) }
     Scaffold(
@@ -158,13 +173,21 @@ fun FormScreen(viewModel: FormViewModel, onNavigateToNurseInfo: () -> Unit) {
                 )
                 Button(
                     onClick = {
+
                         viewModel.validateLogin(
                             onSuccess = onNavigateToNurseInfo
                         )
+
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Login")
+                }
+                Button(
+                    onClick = onNavigateToRetrofitExample,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Nurse Profile")
                 }
                 TextButton(
                     onClick = { showRegistrationForm = true },
@@ -177,7 +200,78 @@ fun FormScreen(viewModel: FormViewModel, onNavigateToNurseInfo: () -> Unit) {
     }
 }
 
-class FormViewModel : ViewModel() {
+class FormViewModel(private val loginViewModel: LoginViewModel) : ViewModel() {
+    private val _uiState = MutableStateFlow(Login())
+    val uiState: StateFlow<Login> = _uiState
+    val snackbarHostState = SnackbarHostState()
+
+    fun onUsernameChange(newUsername: String) {
+        _uiState.update { it.copy(username = newUsername) }
+    }
+
+    fun onPasswordChange(newPassword: String) {
+        _uiState.update { it.copy(password = newPassword) }
+    }
+
+    fun validateLogin(onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            val username = _uiState.value.username
+            val password = _uiState.value.password
+            loginViewModel.login(username, password)
+                when (val state = loginViewModel.remoteMessageUiState) {
+                    is RemoteNurseUiState.Success -> {
+                        snackbarHostState.showSnackbar("Login successful")
+                        onSuccess()
+                    }
+                    is RemoteNurseUiState.Error -> {
+                        snackbarHostState.showSnackbar("Login failed")
+                    }
+                    else -> {
+                        Unit
+                    }
+                }
+                /*if (_uiState.value.username == "nurse1" && _uiState.value.password == "nurse1") {
+                snackbarHostState.showSnackbar("Login successful")
+                onSuccess()
+            } else {
+                snackbarHostState.showSnackbar("Login incorrect")
+            }*/
+        }
+    }
+}
+
+    @Composable
+    fun ExempleRetrofit(remoteViewModel: ProfieViewModel) {
+        val remoteMessageUiState = remoteViewModel.remoteMessageUiState
+        Column(Modifier.fillMaxWidth().fillMaxHeight()) {
+            Button(onClick = { Log.d("exemple", "1234") }) {
+                Text(text = "hello")
+            }
+            Button(onClick = {
+                remoteViewModel.getNurseId()
+            }) {
+                Log.d("exemple", "resss")
+                Text("Exemple Retrofit")
+            }
+            when (remoteMessageUiState) {
+                is RemoteNurseUiState.Cargant -> Text("Loading... info")
+                is RemoteNurseUiState.Error -> Text("Error")
+                is RemoteNurseUiState.Success -> {
+                    Text(remoteMessageUiState.remoteMessage.password)
+                }
+
+                RemoteNurseUiState.Loading -> Text("Loading...")
+            }
+        }
+    }
+
+    @Preview(showBackground = true)
+    @Composable
+    fun DefaultPreview() {
+        MyApp()
+    }
+
+/*class FormViewModel(private val loginViewModel: LoginViewModel) : ViewModel() {
     private val _uiState = MutableStateFlow(Login())
     val uiState: StateFlow<Login> = _uiState
     val snackbarHostState = SnackbarHostState()
@@ -189,18 +283,34 @@ class FormViewModel : ViewModel() {
     }
     fun validateLogin(onSuccess: () -> Unit) {
         viewModelScope.launch {
-            if (_uiState.value.username == "nurse1" && _uiState.value.password == "nurse1") {
+            /*val username = _uiState.value.username
+            val password = _uiState.value.password
+            loginViewModel.login(username, password)*/
+            viewModelScope.launch {
+                /*when (val state = loginViewModel.remoteMessageUiState) {
+                    is RemoteNurseUiState.Success -> {
+                        snackbarHostState.showSnackbar("Login successful")
+                        onSuccess()
+                    }
+                    is RemoteNurseUiState.Error -> {
+                        snackbarHostState.showSnackbar("Login failed")
+                    }
+                    else -> {
+                        Unit
+                    }*/
+                    if (_uiState.value.username == "nurse1" && _uiState.value.password == "nurse1") {
                 snackbarHostState.showSnackbar("Login successful")
                 onSuccess()
             } else {
                 snackbarHostState.showSnackbar("Login incorrect")
             }
+                }
+            }
         }
-    }
-}
+    }*/
 
 
-/*@OptIn(ExperimentalMaterial3Api::class)
+        /*@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchNurseScreen(onNavigateToNurseInfo: () -> Unit, onNavigateBack: () -> Unit) {
     var text1 by remember { mutableStateOf("") }
@@ -251,11 +361,3 @@ fun SearchNurseScreen(onNavigateToNurseInfo: () -> Unit, onNavigateBack: () -> U
 fun searchNursesByName(query: String): List<Nurse> {
     return nurses.filter { it.name.contains(query, ignoreCase = true) }.take(3)
 }*/
-
-
-
-@Preview(showBackground = true)
-@Composable
-fun DefaultPreview() {
-    MyApp()
-}

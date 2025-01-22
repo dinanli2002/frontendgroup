@@ -16,18 +16,18 @@ import com.example.frontendgroup.stricturedata.Nurse
 
 // Lista de enfermeras with pictures
 val nurses = listOf(
-    Nurse("nurse1", "nurse1", "nurse1",R.drawable.imagen2),
-    Nurse("Dayanna", "dayannadw", "dayanna1",R.drawable.imagen),
-    Nurse("Daniel", "danirios", "dani2",R.drawable.imagen2),
-    Nurse("Dinan", "dinanli", "dinan3",R.drawable.imagen2),
-    Nurse("Alberto", "albertore", "albert4",R.drawable.imagen2),
-    Nurse("nurse2", "nurse2", "nurse2",R.drawable.imagen),
-    Nurse("nurse3", "nurse3", "nurse3",R.drawable.imagen),
-    Nurse("nurse4", "nurse4", "nurse4",R.drawable.imagen2),
-    Nurse("nurse5", "nurse5", "nurse5",R.drawable.imagen),
-    Nurse("nurse6", "nurse6", "nurse6",R.drawable.imagen),
-    Nurse("nurse7", "nurse7", "nurse7",R.drawable.imagen2),
-    Nurse("nurse8", "nurse8", "nurse8",R.drawable.imagen2),
+    Nurse("1", "nurse1", "nurse1"),
+    Nurse("2","Dayanna", "dayannadw"),
+    Nurse("3","Daniel", "danirios"),
+    Nurse("4","Dinan", "dinanli"),
+    Nurse("5","Alberto", "albertore"),
+    Nurse("6","nurse2", "nurse2"),
+    Nurse("7","nurse3", "nurse3"),
+    Nurse("8","nurse4", "nurse4"),
+    Nurse("9","nurse5", "nurse5"),
+    Nurse("10","nurse6", "nurse6"),
+    Nurse("11","nurse7", "nurse7"),
+    Nurse("12","nurse8", "nurse8"),
 )
 
 @Composable
@@ -58,25 +58,25 @@ fun NurseItem(nurse: Nurse) {
             .fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Image(
+        /*Image(
             painter = painterResource(id = nurse. nursePicture),
             contentDescription = "Profile picture of ${nurse.name}",
             modifier = Modifier
                 .size(64.dp)
                 .padding(4.dp),
             contentScale = ContentScale.Crop
-        )
+        )*/
         Column(modifier = Modifier.padding(8.dp)) {
             Text(
-                text = "Name: ${nurse.name}",
+                text = "Name: ${nurse.username}",
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.primary
             )
-            Text(
+            /*Text(
                 text = "User: ${nurse.user}",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.secondary
-            )
+            )*/
             Text(
                 text = "Password: ${nurse.password}",
                 style = MaterialTheme.typography.bodySmall,
