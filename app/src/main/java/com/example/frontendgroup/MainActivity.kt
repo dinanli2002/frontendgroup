@@ -71,10 +71,17 @@ fun MyApp() {
                     return FormViewModel(loginViewModel) as T
                 }
             })
+            val registerViewModel: RegisterViewModel = viewModel(factory = object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    return RegisterViewModel() as T
+                }
+            })
             FormScreen(
                 viewModel = formViewModel,
                 onNavigateToNurseInfo = { navController.navigate("nurseList") },
-                onNavigateToRetrofitExample = { navController.navigate("retrofitExample") }
+                onNavigateToRetrofitExample = { navController.navigate("retrofitExample") },
+                registerViewModel = registerViewModel
             )
         }
         composable("nurseList") {
@@ -111,7 +118,7 @@ fun MainScreen(navController: NavController) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FormScreen(viewModel: FormViewModel, onNavigateToNurseInfo: () -> Unit, onNavigateToRetrofitExample: () -> Unit) {
+fun FormScreen(viewModel: FormViewModel, onNavigateToNurseInfo: () -> Unit, onNavigateToRetrofitExample: () -> Unit, registerViewModel: RegisterViewModel) {
     val uiState = viewModel.uiState.collectAsState()
     var showRegistrationForm by remember { mutableStateOf(false) }
     Scaffold(
@@ -146,10 +153,10 @@ fun FormScreen(viewModel: FormViewModel, onNavigateToNurseInfo: () -> Unit, onNa
                     modifier = Modifier.fillMaxWidth()
                 )
                 Button(
-                    onClick = onNavigateToNurseInfo,
+                    onClick = {registerViewModel.register(uiState.value.username, uiState.value.password)},
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Go to Nurse List")
+                    Text("Register")
                 }
                 TextButton(
                     onClick = { showRegistrationForm = false },
@@ -173,11 +180,9 @@ fun FormScreen(viewModel: FormViewModel, onNavigateToNurseInfo: () -> Unit, onNa
                 )
                 Button(
                     onClick = {
-
                         viewModel.validateLogin(
                             onSuccess = onNavigateToNurseInfo
                         )
-
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -189,11 +194,11 @@ fun FormScreen(viewModel: FormViewModel, onNavigateToNurseInfo: () -> Unit, onNa
                 ) {
                     Text("Nurse Profile")
                 }
-                TextButton(
+                Button(
                     onClick = { showRegistrationForm = true },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Registry")
+                    Text("Register")
                 }
             }
         }

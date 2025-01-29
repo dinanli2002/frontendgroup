@@ -15,4 +15,7 @@ interface NurseInterface {
     @FormUrlEncoded
     @POST("nurses/login")
     suspend fun login(@Field("username") username: String, @Field("password") password: String): Response<ResponseBody>
+    @FormUrlEncoded
+    @POST("nurses/create")
+    suspend fun register(@Field("username") username: String, @Field("password") password: String): Response<ResponseBody>
 }
