@@ -8,10 +8,15 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.example.frontendgroup.retrofit.RemoteNurseUiState
 import com.example.frontendgroup.stricturedata.Nurse
 
 // Lista de enfermeras with pictures
@@ -31,7 +36,8 @@ val nurses = listOf(
 )
 
 @Composable
-fun NurseList(onBackPressed: () -> Unit) {
+fun NurseList(onBackPressed: () -> Unit, viewModel: ProfieViewModel, nurseId: Int ) {
+    val nurseState by remember { mutableStateOf(viewModel.remoteMessageUiState) }
     Column(modifier = Modifier.fillMaxSize()) {
         Button(
             onClick = onBackPressed,
@@ -39,12 +45,41 @@ fun NurseList(onBackPressed: () -> Unit) {
         ) {
             Text("Back", style = MaterialTheme.typography.bodyLarge)
         }
-        LazyColumn(modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)) {
-
-            items(nurses) { nurse ->
-                NurseItem(nurse = nurse)
+        Column(modifier = Modifier.weight(1f)) {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+            ) {
+                items(nurses) { nurse ->
+                    NurseItem(nurse = nurse)
+                }
+            }
+        }
+        Button(
+            onClick = { viewModel.getNurseId(nurseId.toString())},
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Text("Nurse Profile", style = MaterialTheme.typography.bodyLarge)
+        }
+        when (nurseState) {
+            is RemoteNurseUiState.Success -> {
+                val nurse = (nurseState as RemoteNurseUiState.Success).remoteMessage
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Nurse Username: ${nurse.username}")
+                    Text("Nurse Password: ${nurse.password}")
+                }
+            }
+            is RemoteNurseUiState.Error -> {
+                Text("Error loading nurse profile", color = Color.Red, modifier = Modifier.padding(16.dp))
+            }
+            RemoteNurseUiState.Loading -> {
+                Text("Loading...", modifier = Modifier.padding(16.dp))
+            }
+            RemoteNurseUiState.Cargant -> { // Handle 'Cargant' state
+                Text("Fetching data...", modifier = Modifier.padding(16.dp))
             }
         }
     }
@@ -58,25 +93,12 @@ fun NurseItem(nurse: Nurse) {
             .fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        /*Image(
-            painter = painterResource(id = nurse. nursePicture),
-            contentDescription = "Profile picture of ${nurse.name}",
-            modifier = Modifier
-                .size(64.dp)
-                .padding(4.dp),
-            contentScale = ContentScale.Crop
-        )*/
         Column(modifier = Modifier.padding(8.dp)) {
             Text(
                 text = "Name: ${nurse.username}",
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.primary
             )
-            /*Text(
-                text = "User: ${nurse.user}",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.secondary
-            )*/
             Text(
                 text = "Password: ${nurse.password}",
                 style = MaterialTheme.typography.bodySmall,
