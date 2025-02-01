@@ -11,10 +11,10 @@ import retrofit2.http.Path
 
 interface NurseInterface {
     @GET("nurses/find/{id}")
-    suspend fun getNurseId(@Path("id") id: String): Nurse
+    suspend fun getNurseId(@Path("id") id: Int): Nurse
     @FormUrlEncoded
     @POST("nurses/login")
-    suspend fun login(@Field("username") username: String, @Field("password") password: String): Response<ResponseBody>
+    suspend fun login(@Field("username") username: String, @Field("password") password: String): Response<Nurse>
     @FormUrlEncoded
     @POST("nurses/create")
     suspend fun register(@Field("username") username: String, @Field("password") password: String): Response<ResponseBody>

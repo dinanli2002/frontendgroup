@@ -7,16 +7,21 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 //import androidx.compose.foundation.lazy.LazyColumn
 //import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -25,12 +30,14 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
@@ -43,6 +50,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.frontendgroup.retrofit.RemoteNurseUiState
 import com.example.frontendgroup.stricturedata.Login
+import com.example.frontendgroup.stricturedata.Nurse
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -79,24 +87,26 @@ fun MyApp() {
             })
             FormScreen(
                 viewModel = formViewModel,
-                onNavigateToNurseInfo = { navController.navigate("nurseList") },
-                onNavigateToRetrofitExample = { navController.navigate("retrofitExample") },
-                registerViewModel = registerViewModel
+                registerViewModel = registerViewModel,
+                onNavigateToNurseInfo = { nurseId ->
+                    navController.navigate("nurseList/$nurseId")
+                }
             )
         }
-        composable("nurseList") {
-            MainScreen(navController = navController)
+        composable("nurseList/{nurseId}") { backStackEntry ->
+            val nurseId = backStackEntry.arguments?.getString("nurseId")?.toIntOrNull() ?: 1
+            NurseListScreen(navController = navController, nurseId = nurseId)
         }
-        composable("retrofitExample") {
-            val remoteViewModel: ProfieViewModel = viewModel()
-            ExempleRetrofit(remoteViewModel = remoteViewModel)
+        composable("nurseProfile/{nurseId}") { backStackEntry ->
+            val nurseId = backStackEntry.arguments?.getString("nurseId")?.toIntOrNull() ?: 1
+            NurseProfileScreen(nurseId = nurseId)
         }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(navController: NavController) {
+fun NurseListScreen(navController: NavController,  nurseId: Int) {
     Scaffold(
         topBar = {
             TopAppBar(title = { Text("Nurse List") })
@@ -109,7 +119,21 @@ fun MainScreen(navController: NavController) {
                 padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            NurseList(onBackPressed = { navController.popBackStack() })
+            LazyColumn(
+                modifier = Modifier.weight(1f)
+            ) {
+                items(nurses) { nurse ->
+                    NurseItem(nurse = nurse, onClick = {
+                        navController.navigate("nurseProfile/${nurse.id}")
+                    })
+                }
+            }
+            Button(
+                onClick = { navController.navigate("nurseProfile/$nurseId") },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Profile")
+            }
         }
     }
 }
@@ -118,7 +142,7 @@ fun MainScreen(navController: NavController) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FormScreen(viewModel: FormViewModel, onNavigateToNurseInfo: () -> Unit, onNavigateToRetrofitExample: () -> Unit, registerViewModel: RegisterViewModel) {
+fun FormScreen(viewModel: FormViewModel, onNavigateToNurseInfo: (Int) -> Unit, registerViewModel: RegisterViewModel) {
     val uiState = viewModel.uiState.collectAsState()
     var showRegistrationForm by remember { mutableStateOf(false) }
     Scaffold(
@@ -180,19 +204,13 @@ fun FormScreen(viewModel: FormViewModel, onNavigateToNurseInfo: () -> Unit, onNa
                 )
                 Button(
                     onClick = {
-                        viewModel.validateLogin(
-                            onSuccess = onNavigateToNurseInfo
-                        )
+                        viewModel.validateLogin {
+                            nurseId -> onNavigateToNurseInfo(nurseId)
+                    }
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Login")
-                }
-                Button(
-                    onClick = onNavigateToRetrofitExample,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Nurse Profile")
                 }
                 Button(
                     onClick = { showRegistrationForm = true },
@@ -209,16 +227,13 @@ class FormViewModel(private val loginViewModel: LoginViewModel) : ViewModel() {
     private val _uiState = MutableStateFlow(Login())
     val uiState: StateFlow<Login> = _uiState
     val snackbarHostState = SnackbarHostState()
-
     fun onUsernameChange(newUsername: String) {
         _uiState.update { it.copy(username = newUsername) }
     }
-
     fun onPasswordChange(newPassword: String) {
         _uiState.update { it.copy(password = newPassword) }
     }
-
-    fun validateLogin(onSuccess: () -> Unit) {
+    fun validateLogin(onSuccess: (Int) -> Unit) {
         viewModelScope.launch {
             val username = _uiState.value.username
             val password = _uiState.value.password
@@ -226,7 +241,7 @@ class FormViewModel(private val loginViewModel: LoginViewModel) : ViewModel() {
                 when (val state = loginViewModel.remoteMessageUiState) {
                     is RemoteNurseUiState.Success -> {
                         snackbarHostState.showSnackbar("Login successful")
-                        onSuccess()
+                        onSuccess(state.remoteMessage.id.toInt())
                     }
                     is RemoteNurseUiState.Error -> {
                         snackbarHostState.showSnackbar("Login failed")
@@ -235,40 +250,64 @@ class FormViewModel(private val loginViewModel: LoginViewModel) : ViewModel() {
                         Unit
                     }
                 }
-                /*if (_uiState.value.username == "nurse1" && _uiState.value.password == "nurse1") {
-                snackbarHostState.showSnackbar("Login successful")
-                onSuccess()
-            } else {
-                snackbarHostState.showSnackbar("Login incorrect")
-            }*/
         }
     }
 }
 
-    @Composable
-    fun ExempleRetrofit(remoteViewModel: ProfieViewModel) {
-        val remoteMessageUiState = remoteViewModel.remoteMessageUiState
-        Column(Modifier.fillMaxWidth().fillMaxHeight()) {
-            Button(onClick = { Log.d("exemple", "1234") }) {
-                Text(text = "hello")
-            }
-            Button(onClick = {
-                remoteViewModel.getNurseId()
-            }) {
-                Log.d("exemple", "resss")
-                Text("Exemple Retrofit")
-            }
-            when (remoteMessageUiState) {
-                is RemoteNurseUiState.Cargant -> Text("Loading... info")
-                is RemoteNurseUiState.Error -> Text("Error")
-                is RemoteNurseUiState.Success -> {
-                    Text(remoteMessageUiState.remoteMessage.password)
-                }
 
-                RemoteNurseUiState.Loading -> Text("Loading...")
+@Composable
+fun NurseItem(nurse: Nurse, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .padding(8.dp)
+            .fillMaxWidth()
+            .clickable { onClick() },
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Column(modifier = Modifier.padding(8.dp)) {
+            Text(
+                text = "Name: ${nurse.username}",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Text(
+                text = "Password: ${nurse.password}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.tertiary
+            )
+        }
+    }
+}
+
+@Composable
+fun NurseProfileScreen(nurseId: Int) {
+    val profileViewModel: ProfieViewModel = viewModel()
+    val nurseState by profileViewModel.remoteMessageUiState.collectAsState()
+    LaunchedEffect(nurseId) {
+        profileViewModel.getNurseId(nurseId.toString())
+    }
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.Center) {
+        when (nurseState) {
+            is RemoteNurseUiState.Success -> {
+                val nurse = (nurseState as RemoteNurseUiState.Success).remoteMessage
+                Text("Nurse ID: ${nurse.id}")
+                Text("Username: ${nurse.username}")
+                Text("Password: ${nurse.password}")
+            }
+            is RemoteNurseUiState.Error -> {
+                Text("Error loading nurse profile", color = Color.Red)
+            }
+            RemoteNurseUiState.Loading -> {
+                Text("Loading...")
+            }
+            RemoteNurseUiState.Cargant -> {
+                Text("Fetching data...")
             }
         }
     }
+}
+
+
 
     @Preview(showBackground = true)
     @Composable

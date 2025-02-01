@@ -41,16 +41,18 @@ class LoginViewModel: ViewModel() {
             try {
                 val response = api.login(username, password)
                 if (response.isSuccessful) {
-                    val message = response.body()?.string() ?: "Unknown error"
-                    Log.d("LoginViewModel", "Login successful: $message")
-                    remoteMessageUiState = RemoteNurseUiState.Success(Nurse("1", username, password))
+                    val nurse = response.body()
+                    if (nurse != null) {
+                        Log.d("LoginViewModel", "Login successful: ${nurse.id}")
+                        remoteMessageUiState = RemoteNurseUiState.Success(nurse)
+                    } else {
+                        Log.e("LoginViewModel", "Login response was empty")
+                        remoteMessageUiState = RemoteNurseUiState.Error
+                    }
                 } else {
                     Log.e("LoginViewModel", "Login failed with code: ${response.code()}")
                     remoteMessageUiState = RemoteNurseUiState.Error
                 }
-                /*val response = api.login(username, password)
-                Log.d("LoginViewModel", "Login successful: ${response.body()}")
-                remoteMessageUiState = RemoteNurseUiState.Success(Nurse("1", "nurse1", "nurse1"))*/
             } catch (e: Exception) {
                 Log.e("LoginViewModel", "Login error: ${e.message}", e)
                 remoteMessageUiState = RemoteNurseUiState.Error
