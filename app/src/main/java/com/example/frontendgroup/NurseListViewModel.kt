@@ -16,11 +16,10 @@ import kotlinx.coroutines.flow.StateFlow
 
 
 class NurseListViewModel : ViewModel() {
-    // Usamos 'MutableStateFlow' para manejar el estado
+
     private val _remoteMessageUiState = MutableStateFlow<RemoteNurseUiState>(RemoteNurseUiState.Loading)
     val remoteMessageUiState: StateFlow<RemoteNurseUiState> = _remoteMessageUiState
 
-    // Crear el cliente de OkHttp para logging y manejo de solicitudes
     private val client = OkHttpClient.Builder()
         .addInterceptor { chain ->
             val request = chain.request()
@@ -36,37 +35,35 @@ class NurseListViewModel : ViewModel() {
         .build()
 
 
-    // Crear la instancia de Retrofit para interactuar con la API
     private val api: NurseInterface = Retrofit.Builder()
-        .baseUrl("http://10.0.2.2:8080/")  // Reemplaza con la URL correcta de tu servidor
+        .baseUrl("http://10.0.2.2:8080/")
         .addConverterFactory(GsonConverterFactory.create())
         .client(client)
         .build()
         .create(NurseInterface::class.java)
 
-    // Función para obtener la lista de enfermeras desde la API
     fun getAllNurses() {
         viewModelScope.launch {
-            // Establecemos el estado de carga
+
             _remoteMessageUiState.value = RemoteNurseUiState.Loading
 
             try {
-                // Realizamos la llamada a la API
+
                 val response = api.getAllNurses()
 
                 if (response.isSuccessful) {
                     val nurses = response.body() ?: emptyList()
                     Log.d("NurseListViewModel", "Successfully fetched nurses list: ${nurses.size}")
 
-                    // Aquí estamos pasando la lista de enfermeras al estado de éxito
-                    _remoteMessageUiState.value = RemoteNurseUiState.SuccessList(nurses)  // Usamos SuccessList para manejar la lista
+
+                    _remoteMessageUiState.value = RemoteNurseUiState.SuccessList(nurses)
                 } else {
                     Log.e("NurseListViewModel", "Failed with code: ${response.code()}")
-                    _remoteMessageUiState.value = RemoteNurseUiState.Error  // En caso de error con la respuesta
+                    _remoteMessageUiState.value = RemoteNurseUiState.Error
                 }
             } catch (e: Exception) {
                 Log.e("NurseListViewModel", "Error: ${e.message}", e)
-                _remoteMessageUiState.value = RemoteNurseUiState.Error // En caso de excepción
+                _remoteMessageUiState.value = RemoteNurseUiState.Error
             }
         }
     }

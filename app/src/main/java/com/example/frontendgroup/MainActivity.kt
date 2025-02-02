@@ -147,7 +147,7 @@ fun NurseListScreen(navController: NavController, nurseId: Int, viewModel: Nurse
                     Text("Fetching data...", modifier = Modifier.fillMaxWidth())
                 }
                 else -> {
-                    // Default empty case if no state
+
                 }
             }
 
@@ -160,7 +160,6 @@ fun NurseListScreen(navController: NavController, nurseId: Int, viewModel: Nurse
         }
     }
 
-    // Trigger the API call to load nurses when the screen is composed
     LaunchedEffect(true) {
         viewModel.getAllNurses()
     }

@@ -17,7 +17,6 @@ import com.example.frontendgroup.stricturedata.Nurse
 @Composable
 fun NurseList(onBackPressed: () -> Unit, viewModel: NurseListViewModel) {
     val nurseState by viewModel.remoteMessageUiState.collectAsState()
-
     Column(modifier = Modifier.fillMaxSize()) {
         Button(
             onClick = onBackPressed,
