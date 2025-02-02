@@ -28,7 +28,8 @@ class ProfieViewModel: ViewModel() {
             response
         }.build()
     private val api: NurseInterface = Retrofit.Builder()
-        .baseUrl("http://10.0.2.2:8080/") // Ensure your backend is running
+        .baseUrl("http://10.0.2.2:8080/")
+        // Ensure your backend is running
         .addConverterFactory(GsonConverterFactory.create())
         .client(client)
         .build()
