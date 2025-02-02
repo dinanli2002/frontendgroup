@@ -95,8 +95,10 @@ fun MyApp() {
         }
         composable("nurseList/{nurseId}") { backStackEntry ->
             val nurseId = backStackEntry.arguments?.getString("nurseId")?.toIntOrNull() ?: 1
-            NurseListScreen(navController = navController, nurseId = nurseId)
+            val viewModel: NurseListViewModel = viewModel()
+            NurseListScreen(navController = navController, nurseId = nurseId, viewModel = viewModel)
         }
+
         composable("nurseProfile/{nurseId}") { backStackEntry ->
             val nurseId = backStackEntry.arguments?.getString("nurseId")?.toIntOrNull() ?: 1
             NurseProfileScreen(nurseId = nurseId)
@@ -106,28 +108,49 @@ fun MyApp() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NurseListScreen(navController: NavController,  nurseId: Int) {
+fun NurseListScreen(navController: NavController, nurseId: Int, viewModel: NurseListViewModel) {
+    val nurseState by viewModel.remoteMessageUiState.collectAsState()
+
     Scaffold(
         topBar = {
             TopAppBar(title = { Text("Nurse List") })
         }
     ) { paddingValues ->
-        Column (
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues).
-                padding(16.dp),
+                .padding(paddingValues)
+                .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            LazyColumn(
-                modifier = Modifier.weight(1f)
-            ) {
-                items(nurses) { nurse ->
-                    NurseItem(nurse = nurse, onClick = {
-                        navController.navigate("nurseProfile/${nurse.id}")
-                    })
+            when (nurseState) {
+                is RemoteNurseUiState.Loading -> {
+                    Text("Loading...", modifier = Modifier.fillMaxWidth())
+                }
+                is RemoteNurseUiState.SuccessList -> {
+                    LazyColumn(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxSize()
+                    ) {
+                        items((nurseState as RemoteNurseUiState.SuccessList).remoteMessage) { nurse ->
+                            NurseItem(nurse = nurse, onClick = {
+                                navController.navigate("nurseProfile/${nurse.id}")
+                            })
+                        }
+                    }
+                }
+                is RemoteNurseUiState.Error -> {
+                    Text("Error loading nurses", color = Color.Red, modifier = Modifier.fillMaxWidth())
+                }
+                RemoteNurseUiState.Cargant -> {
+                    Text("Fetching data...", modifier = Modifier.fillMaxWidth())
+                }
+                else -> {
+
                 }
             }
+
             Button(
                 onClick = { navController.navigate("nurseProfile/$nurseId") },
                 modifier = Modifier.fillMaxWidth()
@@ -136,7 +159,12 @@ fun NurseListScreen(navController: NavController,  nurseId: Int) {
             }
         }
     }
+
+    LaunchedEffect(true) {
+        viewModel.getAllNurses()
+    }
 }
+
 
 
 
@@ -205,8 +233,8 @@ fun FormScreen(viewModel: FormViewModel, onNavigateToNurseInfo: (Int) -> Unit, r
                 Button(
                     onClick = {
                         viewModel.validateLogin {
-                            nurseId -> onNavigateToNurseInfo(nurseId)
-                    }
+                                nurseId -> onNavigateToNurseInfo(nurseId)
+                        }
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -238,18 +266,18 @@ class FormViewModel(private val loginViewModel: LoginViewModel) : ViewModel() {
             val username = _uiState.value.username
             val password = _uiState.value.password
             loginViewModel.login(username, password)
-                when (val state = loginViewModel.remoteMessageUiState) {
-                    is RemoteNurseUiState.Success -> {
-                        snackbarHostState.showSnackbar("Login successful")
-                        onSuccess(state.remoteMessage.id.toInt())
-                    }
-                    is RemoteNurseUiState.Error -> {
-                        snackbarHostState.showSnackbar("Login failed")
-                    }
-                    else -> {
-                        Unit
-                    }
+            when (val state = loginViewModel.remoteMessageUiState) {
+                is RemoteNurseUiState.Success -> {
+                    snackbarHostState.showSnackbar("Login successful")
+                    onSuccess(state.remoteMessage.id.toInt())
                 }
+                is RemoteNurseUiState.Error -> {
+                    snackbarHostState.showSnackbar("Login failed")
+                }
+                else -> {
+                    Unit
+                }
+            }
         }
     }
 }
@@ -283,10 +311,17 @@ fun NurseItem(nurse: Nurse, onClick: () -> Unit) {
 fun NurseProfileScreen(nurseId: Int) {
     val profileViewModel: ProfieViewModel = viewModel()
     val nurseState by profileViewModel.remoteMessageUiState.collectAsState()
+
     LaunchedEffect(nurseId) {
         profileViewModel.getNurseId(nurseId.toString())
     }
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.Center) {
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.Center
+    ) {
         when (nurseState) {
             is RemoteNurseUiState.Success -> {
                 val nurse = (nurseState as RemoteNurseUiState.Success).remoteMessage
@@ -294,8 +329,12 @@ fun NurseProfileScreen(nurseId: Int) {
                 Text("Username: ${nurse.username}")
                 Text("Password: ${nurse.password}")
             }
-            is RemoteNurseUiState.Error -> {
-                Text("Error loading nurse profile", color = Color.Red)
+            is RemoteNurseUiState.SuccessList -> {
+                val nurses = (nurseState as RemoteNurseUiState.SuccessList).remoteMessage
+                Text("Nurses List:")
+                nurses.forEach {
+                    Text("Nurse ID: ${it.id}, Username: ${it.username}")
+                }
             }
             RemoteNurseUiState.Loading -> {
                 Text("Loading...")
@@ -303,17 +342,21 @@ fun NurseProfileScreen(nurseId: Int) {
             RemoteNurseUiState.Cargant -> {
                 Text("Fetching data...")
             }
+            RemoteNurseUiState.Error -> {
+                Text("Error loading nurse profile", color = Color.Red)
+            }
         }
     }
 }
 
 
 
-    @Preview(showBackground = true)
-    @Composable
-    fun DefaultPreview() {
-        MyApp()
-    }
+
+@Preview(showBackground = true)
+@Composable
+fun DefaultPreview() {
+    MyApp()
+}
 
 /*class FormViewModel(private val loginViewModel: LoginViewModel) : ViewModel() {
     private val _uiState = MutableStateFlow(Login())
@@ -354,54 +397,54 @@ fun NurseProfileScreen(nurseId: Int) {
     }*/
 
 
-        /*@OptIn(ExperimentalMaterial3Api::class)
+/*@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchNurseScreen(onNavigateToNurseInfo: () -> Unit, onNavigateBack: () -> Unit) {
-    var text1 by remember { mutableStateOf("") }
-    var snackbarHostState = remember { SnackbarHostState() }
-    var snackbarMessage by remember { mutableStateOf("") }
-    var results by remember { mutableStateOf(listOf<Nurse>()) }
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Nurse Search Screen") },
-                navigationIcon = {
-                    Button(onClick = onNavigateBack) { Text("Back") }
-                }
-            )
+var text1 by remember { mutableStateOf("") }
+var snackbarHostState = remember { SnackbarHostState() }
+var snackbarMessage by remember { mutableStateOf("") }
+var results by remember { mutableStateOf(listOf<Nurse>()) }
+Scaffold(
+topBar = {
+    TopAppBar(
+        title = { Text("Nurse Search Screen") },
+        navigationIcon = {
+            Button(onClick = onNavigateBack) { Text("Back") }
+        }
+    )
+},
+) { paddingValues ->
+Column(
+    modifier = Modifier
+        .fillMaxSize()
+        .padding(paddingValues)
+        .padding(16.dp),
+    verticalArrangement = Arrangement.spacedBy(16.dp)
+) {
+    TextField(
+        value = text1,
+        onValueChange = { text1 = it },
+        label = { Text("Username") },
+        modifier = Modifier.fillMaxWidth()
+    )
+    Button(
+        onClick = {
+                snackbarMessage = "Search Successful"
+            results = searchNursesByName(text1)
         },
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            TextField(
-                value = text1,
-                onValueChange = { text1 = it },
-                label = { Text("Username") },
-                modifier = Modifier.fillMaxWidth()
-            )
-            Button(
-                onClick = {
-                        snackbarMessage = "Search Successful"
-                    results = searchNursesByName(text1)
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Search")
-            }
-            LazyColumn(modifier = Modifier.fillMaxSize().padding(top = 16.dp)) {
-                items(results) { nurse ->
-                    NurseItem(nurse = nurse)
-                }
-            }
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Text("Search")
+    }
+    LazyColumn(modifier = Modifier.fillMaxSize().padding(top = 16.dp)) {
+        items(results) { nurse ->
+            NurseItem(nurse = nurse)
         }
     }
 }
+}
+}
 
 fun searchNursesByName(query: String): List<Nurse> {
-    return nurses.filter { it.name.contains(query, ignoreCase = true) }.take(3)
+return nurses.filter { it.name.contains(query, ignoreCase = true) }.take(3)
 }*/

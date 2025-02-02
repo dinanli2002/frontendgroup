@@ -10,6 +10,9 @@ import retrofit2.http.POST
 import retrofit2.http.Path
 
 interface NurseInterface {
+
+    @GET("nurses/all")
+    suspend fun getAllNurses(): Response<List<Nurse>>
     @GET("nurses/find/{id}")
     suspend fun getNurseId(@Path("id") id: Int): Nurse
     @FormUrlEncoded
