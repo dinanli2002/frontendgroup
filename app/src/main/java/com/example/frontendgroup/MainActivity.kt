@@ -105,11 +105,25 @@ fun MyApp() {
         }
     }
 }
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NurseListScreen(navController: NavController, nurseId: Int, viewModel: NurseListViewModel) {
     val nurseState by viewModel.remoteMessageUiState.collectAsState()
+    var searchQuery by remember { mutableStateOf("") }  // State for the search query
+    var filteredNurses by remember { mutableStateOf<List<Nurse>>(emptyList()) }  // State for the filtered list of nurses
+
+    // Update the filtered list when the search query changes
+    LaunchedEffect(searchQuery) {
+        filteredNurses = if (searchQuery.isNotEmpty()) {
+            // Filter nurses based on the search query
+            (nurseState as? RemoteNurseUiState.SuccessList)?.remoteMessage?.filter {
+                it.username.contains(searchQuery, ignoreCase = true)  // Case-insensitive search
+            } ?: emptyList()
+        } else {
+            // Show all nurses if search query is empty
+            (nurseState as? RemoteNurseUiState.SuccessList)?.remoteMessage ?: emptyList()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -123,17 +137,26 @@ fun NurseListScreen(navController: NavController, nurseId: Int, viewModel: Nurse
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Search bar (TextField) for nurse name
+            TextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                label = { Text("Search by Nurse Name") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
             when (nurseState) {
                 is RemoteNurseUiState.Loading -> {
                     Text("Loading...", modifier = Modifier.fillMaxWidth())
                 }
                 is RemoteNurseUiState.SuccessList -> {
+                    // Display the filtered nurses
                     LazyColumn(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxSize()
                     ) {
-                        items((nurseState as RemoteNurseUiState.SuccessList).remoteMessage) { nurse ->
+                        items(filteredNurses) { nurse ->
                             NurseItem(nurse = nurse, onClick = {
                                 navController.navigate("nurseProfile/${nurse.id}")
                             })
@@ -147,7 +170,7 @@ fun NurseListScreen(navController: NavController, nurseId: Int, viewModel: Nurse
                     Text("Fetching data...", modifier = Modifier.fillMaxWidth())
                 }
                 else -> {
-
+                    // Handle other states if necessary
                 }
             }
 
@@ -164,6 +187,7 @@ fun NurseListScreen(navController: NavController, nurseId: Int, viewModel: Nurse
         viewModel.getAllNurses()
     }
 }
+
 
 
 
@@ -312,6 +336,11 @@ fun NurseProfileScreen(nurseId: Int) {
     val profileViewModel: ProfieViewModel = viewModel()
     val nurseState by profileViewModel.remoteMessageUiState.collectAsState()
 
+    // Track changes in username and password
+    var updatedUsername by remember { mutableStateOf("") }
+    var updatedPassword by remember { mutableStateOf("") }
+
+    // Fetch nurse data based on the nurseId
     LaunchedEffect(nurseId) {
         profileViewModel.getNurseId(nurseId.toString())
     }
@@ -325,31 +354,51 @@ fun NurseProfileScreen(nurseId: Int) {
         when (nurseState) {
             is RemoteNurseUiState.Success -> {
                 val nurse = (nurseState as RemoteNurseUiState.Success).remoteMessage
+                updatedUsername = nurse.username
+                updatedPassword = nurse.password
+
                 Text("Nurse ID: ${nurse.id}")
-                Text("Username: ${nurse.username}")
-                Text("Password: ${nurse.password}")
-            }
-            is RemoteNurseUiState.SuccessList -> {
-                val nurses = (nurseState as RemoteNurseUiState.SuccessList).remoteMessage
-                Text("Nurses List:")
-                nurses.forEach {
-                    Text("Nurse ID: ${it.id}, Username: ${it.username}")
+                TextField(
+                    value = updatedUsername,
+                    onValueChange = { updatedUsername = it },
+                    label = { Text("Username") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                TextField(
+                    value = updatedPassword,
+                    onValueChange = { updatedPassword = it },
+                    label = { Text("Password") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                // Update Button
+                Button(
+                    onClick = {
+                        // Call the ViewModel to update the nurse's information
+
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Update Nurse Info")
                 }
+
             }
+
             RemoteNurseUiState.Loading -> {
                 Text("Loading...")
             }
-            RemoteNurseUiState.Cargant -> {
-                Text("Fetching data...")
-            }
+
             RemoteNurseUiState.Error -> {
                 Text("Error loading nurse profile", color = Color.Red)
+            }
+
+            else -> {
+                Text("No data")
+
             }
         }
     }
 }
-
-
 
 
 @Preview(showBackground = true)
